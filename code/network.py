@@ -2,9 +2,9 @@ import torch
 from torch import nn
 import numpy as np
 from resnet import GenModel_FC, WriterClaModel, DisModel, RecModel
-from loss import recon_criterion, crit, log_softmax,kl_divergence_loss
+from loss import recon_criterion, crit, log_softmax, kl_divergence_loss
 from parameters import *
-from load_data import IMG_HEIGHT,IMG_WIDTH
+from load_data import IMG_HEIGHT, IMG_WIDTH
 from write_img import write_image
 
 w_dis = 1.0
@@ -25,7 +25,17 @@ class ConTranModel(nn.Module):
         self.oov = oov
 
     def forward(self, train_data_list, epoch, mode, cer_func=None):
-        tr_domain, tr_wid, tr_idx, tr_img, tr_img_width, tr_label, img_xt, label_xt, label_xt_swap = train_data_list
+        (
+            tr_domain,
+            tr_wid,
+            tr_idx,
+            tr_img,
+            tr_img_width,
+            tr_label,
+            img_xt,
+            label_xt,
+            label_xt_swap,
+        ) = train_data_list
         tr_wid = tr_wid.to(device)
         tr_img = tr_img.to(device)
         tr_img_width = tr_img_width.to(device)
@@ -39,12 +49,12 @@ class ConTranModel(nn.Module):
             tr_img_rec = tr_img  # 8,50,64,200 choose one channel 8,1,64,200
             tr_img_rec = tr_img_rec.requires_grad_()
             tr_label_rec = tr_label[:, 0, :]  # 8,50,10 choose one channel 8,10
-            pred_xt_tr = self.rec(
-                tr_img_rec,
-                tr_label_rec),
-            
-            #tr_label_rec2 = tr_label_rec[:, 1:]  # remove <GO>
-            l_rec_tr=kl_divergence_loss(pred_xt_tr[0],tr_label.reshape(-1,text_max_len))
+            pred_xt_tr = (self.rec(tr_img_rec, tr_label_rec),)
+
+            # tr_label_rec2 = tr_label_rec[:, 1:]  # remove <GO>
+            l_rec_tr = kl_divergence_loss(
+                pred_xt_tr[0], tr_label.reshape(-1, text_max_len)
+            )
             # l_rec_tr = crit(
             #     log_softmax(pred_xt_tr[0].reshape(-1, len(vocab))),
             #     tr_label_rec2.reshape(-1),
@@ -62,7 +72,6 @@ class ConTranModel(nn.Module):
             l_cla_tr.backward()
 
             return l_cla_tr
-
 
         elif mode == "gen_update":
             self.iter_num += 1
@@ -126,8 +135,8 @@ class ConTranModel(nn.Module):
             sample_img2 = tr_img[:, 1:2, :, :]
             sample_img1.requires_grad_()
             sample_img2.requires_grad_()
-            l_real1 = self.dis.calc_dis_real_loss(sample_img1.permute(1,0,2,3))
-            l_real2 = self.dis.calc_dis_real_loss(sample_img2.permute(1,0,2,3))
+            l_real1 = self.dis.calc_dis_real_loss(sample_img1.permute(1, 0, 2, 3))
+            l_real2 = self.dis.calc_dis_real_loss(sample_img2.permute(1, 0, 2, 3))
             l_real = (l_real1 + l_real2) / 2.0
             l_real.backward(retain_graph=True)
 
@@ -142,8 +151,8 @@ class ConTranModel(nn.Module):
                 f_mix_swap = self.gen.mix(f_xs, f_embed_swap)
                 xg_swap = self.gen.generate(f_mix_swap, f_xt_swap)
 
-            l_fake_ori = self.dis.calc_dis_fake_loss(xg.permute(1,0,2,3))
-            l_fake_swap = self.dis.calc_dis_fake_loss(xg_swap.permute(1,0,2,3))
+            l_fake_ori = self.dis.calc_dis_fake_loss(xg.permute(1, 0, 2, 3))
+            l_fake_swap = self.dis.calc_dis_fake_loss(xg_swap.permute(1, 0, 2, 3))
             l_fake = (l_fake_ori + l_fake_swap) / 2.0
             l_fake.backward()
 
@@ -155,14 +164,14 @@ class ConTranModel(nn.Module):
             #         pred_xt = self.rec(
             #             xg,
             #             label_xt
-                      
+
             #             ),
-                    
+
             #         pred_xt_swap = self.rec(
             #             xg_swap,
             #             label_xt_swap
             #             ),
-                    
+
             #     write_image(
             #         xg,
             #         pred_xt,
@@ -190,7 +199,7 @@ class ConTranModel(nn.Module):
                 # pred_xt = self.rec(
                 #     xg,
                 #     label_xt
-                
+
                 # )
                 # pred_xt_swap = self.rec(
                 #     xg_swap,

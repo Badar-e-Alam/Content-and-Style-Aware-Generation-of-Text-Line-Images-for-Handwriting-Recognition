@@ -9,10 +9,10 @@
 #         """
 #          self.embed = Apply the embedding layer on the text tensor(2,85) -> (batch_size,max_text_len) -> out= (batch_size,max_len,embedding_size)
 #          xx = (batch_size, max_len_embedding_size)
-#          xxx = reshape the embedding output  from (batch_size,max_len_text,embedding_size) -> (batch_size,max_len*embedding_size) 
+#          xxx = reshape the embedding output  from (batch_size,max_len_text,embedding_size) -> (batch_size,max_len*embedding_size)
 #          out = Contained the output of the text style_network out_dim -> (batch_size,4096)
 
-#          xx_new =  apply the Linear layer on the embedding output 
+#          xx_new =  apply the Linear layer on the embedding output
 
 #         """
 #         self.embed = nn.Embedding(len(vocab), embedding_size)  # 81,64
@@ -33,9 +33,9 @@
 
 #     def forward(self, x):
 #         """
-#         X: tensor of dim batch_size, max_text_len and embed_dim plz take other things will work accordingly 
-#         just take care of it. 
-        
+#         X: tensor of dim batch_size, max_text_len and embed_dim plz take other things will work accordingly
+#         just take care of it.
+
 #         """
 #         embedding = self.embed(x)  # b,t,embed
 

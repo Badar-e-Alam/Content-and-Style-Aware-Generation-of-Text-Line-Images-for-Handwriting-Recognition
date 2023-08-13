@@ -1,8 +1,10 @@
-import torch 
+import torch
 import torch.nn as nn
 from helper import batch_size
-from load_data import NUM_CHANNEL,vocab_size,tokens
-from parameters import device,number_feature
+from load_data import tokens
+
+from parameters import device, number_feature, NUM_CHANNEL,vocab
+
 
 class Visual_encoder(nn.Module):
     def __init__(self):
@@ -132,7 +134,7 @@ class TextEncoder_FC(nn.Module):
     def __init__(self, text_max_len):
         super(TextEncoder_FC, self).__init__()
         embed_size = 64
-        self.embed = nn.Embedding(vocab_size, embed_size)
+        self.embed = nn.Embedding(len(vocab), embed_size)
         self.fc = nn.Sequential(
                 nn.Linear(text_max_len*embed_size, 1024),
                 nn.BatchNorm1d(1024),
@@ -145,26 +147,21 @@ class TextEncoder_FC(nn.Module):
         '''embed content force'''
         self.linear = nn.Linear(embed_size, 512)
 
-    def forward(self,x,f_xs_shape):
+    def forward(self, x, f_xs_shape):
 
         xx = self.embed(x) # b,t,embed
-
         batch_size = xx.shape[0]
-        xxx = xx.reshape(batch_size, -1) # b,t*embed
+        xxx = xx.view(batch_size, -1) # b,t*embed
         out = self.fc(xxx)
 
         '''embed content force'''
         xx_new = self.linear(xx) # b, text_max_len, 512
-        ts = xx_new.shape[1] 
-        if f_xs_shape[1]<xx_new.size(2):
-            xx_new=xx_new[:,:,:f_xs_shape[1]]
-            ts=f_xs_shape[1]
-            
+
+        ts = f_xs_shape[-1]
         height_reps = f_xs_shape[-2]
         width_reps = f_xs_shape[-1] // ts
         if width_reps==0:
-            width_reps=1
-            ts=f_xs_shape[-1]
+                 width_reps=1 
         tensor_list = list()
 
         for i in range(ts):
@@ -174,15 +171,12 @@ class TextEncoder_FC(nn.Module):
 
         padding_reps = f_xs_shape[-1] % ts
         if padding_reps:
-            embedded_padding_char = self.embed(torch.full((1, 1), tokens['PAD_TOKEN'], dtype=torch.long).to(device))
+            embedded_padding_char = self.embed(torch.full((1, 1), tokens['PAD_TOKEN'], dtype=torch.long))
             embedded_padding_char = self.linear(embedded_padding_char)
             padding = embedded_padding_char.repeat(batch_size, padding_reps, 1)
-            tensor_list.append(padding)
 
+            tensor_list.append(padding)
         res = torch.cat(tensor_list, dim=1) # b, text_max_len * width_reps + padding_reps, 512
         res = res.permute(0, 2, 1).unsqueeze(2) # b, 512, 1, text_max_len * width_reps + padding_reps
         final_res = torch.cat([res] * height_reps, dim=2)
-
-
-
         return out, final_res

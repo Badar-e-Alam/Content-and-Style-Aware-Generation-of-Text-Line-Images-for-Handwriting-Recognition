@@ -2,17 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from parameters import device
-from models import ImageEncoder,TextEncoder_FC
-#from text_style import TextEncoder_FC
+from models import ImageEncoder, TextEncoder_FC
+
+# from text_style import TextEncoder_FC
 from decoder import Decorder
 from encoder_vgg import Encoder
 from block import Generator_Resnet
 from parameters import batch_size
-from load_data import IMG_HEIGHT,IMG_WIDTH
-from simple_resnet import ResidualBlock,AdaLN
-
-
-
+from load_data import IMG_HEIGHT, IMG_WIDTH
+from simple_resnet import ResidualBlock, AdaLN
 
 
 class DisModel(nn.Module):
@@ -23,7 +21,7 @@ class DisModel(nn.Module):
         self.final_size = 1024
         in_dim = batch_size
         out_dim = 16
-        resnet_out=512
+        resnet_out = 512
         self.ff_cc = nn.Conv2d(
             in_channels=in_dim,
             out_channels=out_dim,
@@ -32,7 +30,10 @@ class DisModel(nn.Module):
             padding="same",
         )
         self.res_blocks = nn.Sequential(
-            *[ResidualBlock(out_dim * 2**i, out_dim * 2**(i+1)) for i in range(self.n_layers)]
+            *[
+                ResidualBlock(out_dim * 2 ** i, out_dim * 2 ** (i + 1))
+                for i in range(self.n_layers)
+            ]
         )
         self.cnn_f = nn.Conv2d(
             resnet_out, self.final_size, kernel_size=7, stride=1, padding="same"
@@ -42,7 +43,9 @@ class DisModel(nn.Module):
     def forward(self, x):
         feat = self.res_blocks(self.ff_cc(x))
         out = self.cnn_f(feat)
-        return out.squeeze(-1).squeeze(-1) # b,1024   maybe b is also 1, so cannnot out.squeeze()
+        return out.squeeze(-1).squeeze(
+            -1
+        )  # b,1024   maybe b is also 1, so cannnot out.squeeze()
 
     def calc_dis_fake_loss(self, input_fake):
         resp_fake = self.forward(input_fake)
@@ -59,12 +62,12 @@ class DisModel(nn.Module):
         return real_loss
 
     def calc_gen_loss(self, input_fake):
-        resp_fake = self.forward(input_fake.permute(1,0,2,3))
+        resp_fake = self.forward(input_fake.permute(1, 0, 2, 3))
         label = torch.ones(resp_fake.shape).to(device)
-
 
         fake_loss = self.bce(resp_fake, label)
         return fake_loss
+
 
 class WriterClaModel(nn.Module):
     """
@@ -91,7 +94,10 @@ class WriterClaModel(nn.Module):
             # padding_mode="reflect",
         )
         self.res_blocks = nn.Sequential(
-            *[ResidualBlock(out_dim * 2**i, out_dim * 2**(i+1)) for i in range(self.n_layers)]
+            *[
+                ResidualBlock(out_dim * 2 ** i, out_dim * 2 ** (i + 1))
+                for i in range(self.n_layers)
+            ]
         )
         self.ff_cc = nn.Conv2d(
             in_channels=in_dim,
@@ -107,7 +113,7 @@ class WriterClaModel(nn.Module):
         resnet = self.res_blocks(cnn_f)
         ff_cc = self.ff_cc(resnet)
 
-        loss = self.cross_entropy(ff_cc.view(ff_cc.size(0),-1), y.view(-1).long())
+        loss = self.cross_entropy(ff_cc.view(ff_cc.size(0), -1), y.view(-1).long())
         return loss
 
 
@@ -124,7 +130,7 @@ def assign_adain_params(adain_params, model):
 
 
 class GenModel_FC(nn.Module):
-    def __init__(self,text_max_len):
+    def __init__(self, text_max_len):
         super(GenModel_FC, self).__init__()
         self.enc_image = ImageEncoder().to(device)
         self.enc_text = TextEncoder_FC(text_max_len).to(device)
@@ -147,61 +153,16 @@ class GenModel_FC(nn.Module):
         down_sampling = self.down_sampling(feat_embed)
         feat_mix = torch.cat([feat_xs, down_sampling], dim=0)  # b,1024,8,27
 
-        ff = self.linear_mix(feat_mix.permute(1,0,2,3))  # b,8,27,1024->b,8,27,512
+        ff = self.linear_mix(feat_mix.permute(1, 0, 2, 3))  # b,8,27,1024->b,8,27,512
         return ff
+
     def mix_final(self, feat_xs, feat_embed):
 
-        feat_mix = torch.cat([feat_xs, feat_embed], dim=1) # b,1024,8,27
+        feat_mix = torch.cat([feat_xs, feat_embed], dim=1)  # b,1024,8,27
         f = feat_mix.permute(0, 2, 3, 1)
-        ff = self.linear_mix_final(f) # b,8,27,1024->b,8,27,512
+        ff = self.linear_mix_final(f)  # b,8,27,1024->b,8,27,512
 
         return ff
-
-
-class Generator(nn.Module):
-    def __init__(
-        self, class_num, num_res_blocks=4, norm_layer=AdaLN, activation=F.leaky_relu
-    ):
-        super().__init__()
-        self.num_res_blocks = num_res_blocks
-        self.norm_layer = norm_layer
-        self.activation = activation
-
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3, bias=False)
-        self.bn1 = norm_layer(64)
-        self.res_blocks = nn.Sequential(
-            *[
-                ResidualBlock(
-                    64, 64, norm_layer=self.norm_layer, activation=self.activation
-                )
-                for _ in range(self.num_res_blocks)
-            ]
-        )
-        self.conv2 = nn.ConvTranspose2d(
-            64, 32, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False
-        )
-        self.bn2 = norm_layer(32)
-        self.conv3 = nn.ConvTranspose2d(
-            32, 16, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False
-        )
-        self.bn3 = norm_layer(16)
-        self.conv4 = nn.ConvTranspose2d(
-            16, 3, kernel_size=3, stride=1, padding=1, bias=False
-        )
-        self.linear = nn.Linear(3, out_features=class_num)
-        self.tanh = nn.Tanh()
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.res_blocks(x)
-        x = self.conv2(x)
-        x = self.bn2(x)
-        x = self.conv3(x)
-        x = self.bn3(x)
-        x = self.conv4(x)
-        x = self.linear(x)
-        return x
 
 
 class RecModel(nn.Module):
@@ -212,6 +173,5 @@ class RecModel(nn.Module):
 
     def forward(self, image, text):
         visual_out = self.enc(image.to(device))
-        text_visual = self.dec(visual_out,text,image.shape)
+        text_visual = self.dec(visual_out, text, image.shape)
         return text_visual
-

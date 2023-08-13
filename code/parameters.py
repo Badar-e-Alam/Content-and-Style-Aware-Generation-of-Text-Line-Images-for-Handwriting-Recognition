@@ -1,18 +1,18 @@
-import os, glob
 import torch
 
 scale_factor = 1
 number_feature = 2000
-# IMAGE_HEIGHT = 64 // 10
-# IMAGE_WIDTH = 250 // 10
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#device = "cpu"
-batch_size = 2
-embedding_size = 64
-Max_str = 25
+device = "cpu"
+batch_size=2
+IMG_HEIGHT = 64 #64
+IMG_WIDTH = 200 #216
+MAX_CHARS = 25+2
+NUM_CHANNEL = 1
+EXTRA_CHANNEL = NUM_CHANNEL+1
+NUM_WRITERS = 500 # iam
+NORMAL = True
 num_heads=2
-text_max_len = Max_str
-
 vocab = {
     " ",
     "!",
@@ -95,34 +95,6 @@ vocab = {
     "z",
 }
 
-cfg = {
-    "E": [
-        64,
-        64,
-        128,
-        128,
-        "M",
-        256,
-        256,
-        256,
-        256,
-        "M",
-        512,
-        512,
-        512,
-        512,
-        "M",
-        512,
-        512,
-        512,
-        512,
-    ],
-}
+
 encoder = {data: i for i, data in enumerate(vocab)}
 decoder = {i: data for i, data in enumerate(vocab)}
-"""
-encoder= {"A":0,"B":1}
-decoder={"0":A,"1":B}
-"""
-tokens = {"GO_TOKEN": 0, "END_TOKEN": 1, "PAD_TOKEN": 2}
-NUM_WRITERS = 500

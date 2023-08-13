@@ -2,6 +2,7 @@ import torch
 import Levenshtein as Lev
 from parameters import *
 import torch.nn.functional as F
+from load_data import tokens
 
 
 def recon_criterion(predict, target):
@@ -41,7 +42,7 @@ def kl_divergence_loss(predicted_probs, target_probs):
     # Broadcast target_probs to match the shape of predicted_probs
     # target_probs = target_probs.unsqueeze(0).expand_as(predicted_probs)
     long_soft = torch.nn.Softmax(dim=1)
-    #target_probs = target_probs.squeeze(2)
+    # target_probs = target_probs.squeeze(2)
     predicted_probs = long_soft(predicted_probs)
     target_probs = long_soft(target_probs.float())
     # predicted_probs=predicted_probs.squeeze(2)
@@ -50,8 +51,9 @@ def kl_divergence_loss(predicted_probs, target_probs):
     log_predicted_probs = torch.log(predicted_probs + eps)
     # Calculate the element-wise KL divergence
 
-    kl_div = F.kl_div(log_predicted_probs, target_probs.view(1,-1), reduction="sum")
+    kl_div = F.kl_div(log_predicted_probs, target_probs.view(1, -1), reduction="sum")
     return kl_div
+
 
 log_softmax = torch.nn.LogSoftmax(dim=-1)
 
