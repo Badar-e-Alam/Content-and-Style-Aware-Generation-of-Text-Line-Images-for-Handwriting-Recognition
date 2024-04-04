@@ -13,7 +13,6 @@ from parameters import *
 
 
 def get_transform(grayscale=False, convert=True):
-
     transform_list = []
     if grayscale:
         transform_list.append(transforms.Grayscale(1))
@@ -30,7 +29,6 @@ def get_transform(grayscale=False, convert=True):
 
 class TextDataset:
     def __init__(self, base_path=Data_pth, num_examples=15, target_transform=None):
-
         self.NUM_EXAMPLES = num_examples
         self.x_str
         # base_path = DATASET_PATHS
@@ -50,7 +48,6 @@ class TextDataset:
         return len(self.author_id)
 
     def __getitem__(self, index):
-
         NUM_SAMPLES = self.NUM_EXAMPLES
 
         author_id = self.author_id[index]
@@ -83,7 +80,6 @@ class TextDataset:
         imgs_wids = []
 
         for img in imgs:
-
             img = 255 - img
             img_height, img_width = img.shape[0], img.shape[1]
             n_repeats = int(np.ceil(max_width / img_width))
@@ -112,7 +108,6 @@ class TextDataset:
 
 class TextDatasetval:
     def __init__(self, base_path=Data_pth, num_examples=15, target_transform=None):
-
         self.NUM_EXAMPLES = num_examples
         # base_path = DATASET_PATHS
         file_to_store = open(base_path, "rb")
@@ -131,7 +126,6 @@ class TextDatasetval:
         return len(self.author_id)
 
     def __getitem__(self, index):
-
         NUM_SAMPLES = self.NUM_EXAMPLES
 
         author_id = self.author_id[index]
@@ -159,7 +153,6 @@ class TextDatasetval:
         imgs_wids = []
 
         for img in imgs:
-
             img = 255 - img
             img_height, img_width = img.shape[0], img.shape[1]
             outImg = np.zeros((img_height, max_width), dtype="float32")
@@ -190,7 +183,6 @@ class TextCollator(object):
         self.resolution = resolution
 
     def __call__(self, batch):
-
         img_path = [item["img_path"] for item in batch]
         width = [item["img"].shape[2] for item in batch]
         indexes = [item["idx"] for item in batch]

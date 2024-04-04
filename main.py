@@ -18,13 +18,12 @@ import time
 # from encoder_vgg import Encoder
 
 if __name__ == "__main__":
+    """
+    dataset:- returns the Images and Label in form of the batch_size and num_example
+    pad_str:- Function is used the pad the strings in the label so each of the string has the equal length
+              Basically pad the string with the empety size character until the maximum size is being achieved
+    Str
 
-    """ 
-            dataset:- returns the Images and Label in form of the batch_size and num_example 
-            pad_str:- Function is used the pad the strings in the label so each of the string has the equal length
-                      Basically pad the string with the empety size character until the maximum size is being achieved
-            Str
-                    
 
 
     """
@@ -32,7 +31,10 @@ if __name__ == "__main__":
     TextDatasetObj = CustomImageDataset()
     no_workers = batch_size // num_example
     dataset = torch.utils.data.DataLoader(
-        TextDatasetObj, batch_size=batch_size, shuffle=True, num_workers=no_workers,
+        TextDatasetObj,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=no_workers,
     )
     decoder_net = Decorder().to(device)
     encoder_net = Encoder().to(device)
@@ -54,9 +56,8 @@ if __name__ == "__main__":
 
         print(f"{concate[0].shape}")
         V_out = encoder_net(Image[0].to(device).unsqueeze(1))
-        T_out = decoder_net.forward(concate[0].to(device),V_out)
+        T_out = decoder_net.forward(concate[0].to(device), V_out)
         break
-    
 
     # train_size = int(0.8 * (len(dataset)))
     # test_size = len(dataset) - train_size

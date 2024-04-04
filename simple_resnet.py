@@ -32,7 +32,12 @@ class ResBlocks(nn.Module):
         super(ResBlocks, self).__init__()
         self.model = []
         for i in range(num_blocks):
-            self.model += [ResNET(in_dim, out_dim,)]
+            self.model += [
+                ResNET(
+                    in_dim,
+                    out_dim,
+                )
+            ]
         self.model = nn.Sequential(*self.model)
 
     def forward(self, x):

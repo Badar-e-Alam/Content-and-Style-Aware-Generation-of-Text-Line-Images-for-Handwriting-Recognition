@@ -10,7 +10,7 @@ class Head(nn.Module):
         self.wq = nn.Linear(infeature, out_feature, bias=False)
         self.wk = nn.Linear(infeature, out_feature, bias=False)
         self.wv = nn.Linear(infeature, out_feature, bias=False)
-        self.scale = 1.0 / (infeature ** 0.5)
+        self.scale = 1.0 / (infeature**0.5)
 
         # Output projection matrix
         self.proj = nn.Linear(infeature, out_feature, bias=False)
@@ -55,8 +55,6 @@ class MultiHeadAttention(nn.Module):
         return out
 
 
-
-
 class Cross_attention(nn.Module):
     def __init__(self, infeature, out_feature):
         super().__init__()
@@ -65,22 +63,28 @@ class Cross_attention(nn.Module):
         self.wq = nn.Linear(infeature, out_feature, bias=False)
         self.wk = nn.Linear(infeature, out_feature, bias=False)
         self.wv = nn.Linear(infeature, out_feature, bias=False)
-        self.scale = 1.0 / (infeature ** 0.5)
+        self.scale = 1.0 / (infeature**0.5)
 
         # Output projection matrix
         self.proj = nn.Linear(infeature, out_feature, bias=False)
 
-    def forward(self, decoder,encoder):
+    def forward(self, decoder, encoder):
         # x shape: [batch_size, num_channels* image_height* image_width]
-        #batch, CHW = x.shape
+        # batch, CHW = x.shape
 
         # Reshape input to [batch_size, num_channels*image_height, image_width]
         # x = x.reshape(x.size(0), -1, x.size(1))
 
         # Compute Q, K, V matrices for each head
-        q = self.wq(decoder)  # q shape: [batch_size, num_channels*image_height, d_model]
-        k = self.wk(encoder)  # k shape: [batch_size, num_channels*image_height, d_model]
-        v = self.wv(decoder)  # v shape: [batch_size, num_channels*image_height, d_model]
+        q = self.wq(
+            decoder
+        )  # q shape: [batch_size, num_channels*image_height, d_model]
+        k = self.wk(
+            encoder
+        )  # k shape: [batch_size, num_channels*image_height, d_model]
+        v = self.wv(
+            decoder
+        )  # v shape: [batch_size, num_channels*image_height, d_model]
         weights = torch.matmul(q, k.transpose(-2, -1))
         weights = weights * self.scale
         weights = nn.functional.softmax(weights, dim=-1)
@@ -103,8 +107,8 @@ class MultiHead_CrossAttention(nn.Module):
         )
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, encoder,decoder):
-        out = torch.cat([h.forward(encoder,decoder) for h in self.heads])
+    def forward(self, encoder, decoder):
+        out = torch.cat([h.forward(encoder, decoder) for h in self.heads])
 
         out = self.dropout(out)
         print(out.shape)

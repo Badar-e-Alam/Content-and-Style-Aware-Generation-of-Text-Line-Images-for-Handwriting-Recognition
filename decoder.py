@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from attention import MultiHeadAttention,MultiHead_CrossAttention
+from attention import MultiHeadAttention, MultiHead_CrossAttention
 
 from models import TextEncoder_FC
 from parameters import (
@@ -41,12 +41,17 @@ class Decorder(torch.nn.Module):
             dropout_prob=0.2,
             attention=False,
         )
-        self.norm=nn.LayerNorm(self.out_feature)
-        self.cross_attention=MultiHead_CrossAttention(infeature=self.out_feature, out_feature=self.out_feature,num_heads=2,dropout=0.2)
-        self.drop=nn.Dropout(self.dropout)
-        self.softmax=nn.Softmax(dim=1)
-    def forward(self, x,encoder_out):
+        self.norm = nn.LayerNorm(self.out_feature)
+        self.cross_attention = MultiHead_CrossAttention(
+            infeature=self.out_feature,
+            out_feature=self.out_feature,
+            num_heads=2,
+            dropout=0.2,
+        )
+        self.drop = nn.Dropout(self.dropout)
+        self.softmax = nn.Softmax(dim=1)
 
+    def forward(self, x, encoder_out):
         char_embedding, global_net = self.TextStyle(x)
         char_upsampling = self.linear_upsampling(char_embedding)
         txt_style = global_net + char_upsampling.view(
@@ -65,22 +70,20 @@ class Decorder(torch.nn.Module):
         )
         attention_norm = attetion_block + norm_down_sample
         block_without_attention, _ = self.block_without_attention(attention_norm)
-        combained_without_attention=block_without_attention+attention_norm
-        norm=self.norm(combained_without_attention)
-        cross_attention=self.cross_attention(norm,encoder_out)
-        drop_out=self.drop(cross_attention)
-        norm = norm.repeat(
-            drop_out.size(0) // (batch_size+batch_size), 1
-        )
+        combained_without_attention = block_without_attention + attention_norm
+        norm = self.norm(combained_without_attention)
+        cross_attention = self.cross_attention(norm, encoder_out)
+        drop_out = self.drop(cross_attention)
+        norm = norm.repeat(drop_out.size(0) // (batch_size + batch_size), 1)
         print(f"{norm.shape=} {drop_out.shape=}")
-        combained_without_attention=drop_out+norm
-        block_without_attention2,_=self.block_without_attention(combained_without_attention)
-        final_combained=block_without_attention2+combained_without_attention
-        soft_max=self.softmax(final_combained)
-        print(soft_max)
-        print(
-            f"{cross_attention.shape=}"
+        combained_without_attention = drop_out + norm
+        block_without_attention2, _ = self.block_without_attention(
+            combained_without_attention
         )
+        final_combained = block_without_attention2 + combained_without_attention
+        soft_max = self.softmax(final_combained)
+        print(soft_max)
+        print(f"{cross_attention.shape=}")
         print("End of decoder")
         return True
 

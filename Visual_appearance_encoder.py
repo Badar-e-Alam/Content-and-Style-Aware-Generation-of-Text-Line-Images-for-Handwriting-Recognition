@@ -32,7 +32,6 @@ class data_set:
         return dbl
 
     def data_loading(self):
-
         train_data = {}
         count = 0
         max_width = 192
@@ -71,7 +70,6 @@ class data_set:
 
 
 if __name__ == "__main__":
-
     s = data_set()
     data = s.data_loading()
     print(data)
